@@ -142,7 +142,7 @@ def saveGraphToEdgeListTxtn2v(graph, file_name):
             f.write('%d %d %f\n' % (i, j, w))
 
 
-def loadGraphFromEdgeListTxt(file_name, directed=True):
+def loadGraphFromEdgeListTxt(file_name, directed=True, has_prefix=False):
     with open(file_name, 'r') as f:
         # n_nodes = f.readline()
         # f.readline() # Discard the number of edges
@@ -156,6 +156,9 @@ def loadGraphFromEdgeListTxt(file_name, directed=True):
                 w = float(edge[2])
             else:
                 w = 1.0
+            if has_prefix:
+                edge[0] = edge[0][1:]
+                edge[1] = edge[1][1:]
             G.add_edge(int(edge[0]), int(edge[1]), weight=w)
     return G
 
