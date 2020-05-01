@@ -17,7 +17,10 @@ from gem.embedding.lle      import LocallyLinearEmbedding
 from gem.embedding.node2vec import node2vec
 from gem.embedding.sdne     import SDNE
 from argparse import ArgumentParser
+import networkx as nx
 
+from collections import namedtuple
+Stats = namedtuple("stats", "MAP prec_curv err err_baseline")
 
 if __name__ == '__main__':
     ''' Sample usage
@@ -30,14 +33,14 @@ if __name__ == '__main__':
 
     models = []
     # Load the models you want to run
-    models.append(GraphFactorization(d=64, max_iter=1000, eta=1 * 10**-4, regu=1.0, data_set='sbm'))
+    models.append(GraphFactorization(d=64, max_iter=50000, eta=1 * 10**-4, regu=1.0, data_set='sbm'))
     models.append(HOPE(d=64, beta=0.01))
     models.append(LaplacianEigenmaps(d=64))
     models.append(LocallyLinearEmbedding(d=64))
     models.append(
-        node2vec(d=64, max_iter=1, walk_len=80, num_walks=10, con_size=10, ret_p=1, inout_p=1, data_set='sbm')
+        node2vec(d=64, max_iter=100, walk_len=80, num_walks=10, con_size=10, ret_p=1, inout_p=1, data_set='sbm')
     )
-    models.append(SDNE(d=64, beta=5, alpha=1e-5, nu1=1e-6, nu2=1e-6, K=3,n_units=[500, 300,], rho=0.3, n_iter=30, xeta=0.001,n_batch=500,
+    models.append(SDNE(d=64, beta=5, alpha=1e-5, nu1=1e-6, nu2=1e-6, K=3,n_units=[500, 300,], rho=0.3, n_iter=100, xeta=0.001,n_batch=500,
                     modelfile=['enc_model.json', 'dec_model.json'],
                     weightfile=['enc_weights.hdf5', 'dec_weights.hdf5']))
 
@@ -46,13 +49,15 @@ if __name__ == '__main__':
     gfiles = [gfile for gfile in os.listdir(dirpath) if os.path.splitext(gfile)[1] == '.csv']
 
     results = {}
-    from collections import namedtuple
-    Stats = namedtuple("stats", "MAP prec_curv err err_baseline")
 
     for gfile in gfiles:
+        if gfile != 'soc-pokec-relationships-4096.csv':
+            continue
+
         G = graph_util.loadGraphFromEdgeListTxt(
             os.path.join(dirpath, gfile), directed=isDirected, has_prefix=True)
         G = G.to_directed()
+        G = nx.relabel.convert_node_labels_to_integers(G)
         print ('Num nodes: %d, num edges: %d' % (G.number_of_nodes(), G.number_of_edges()))
         results[gfile] = {}
         for embedding in models:    
@@ -67,4 +72,9 @@ if __name__ == '__main__':
             print(("\tMAP: {} \t preccision curve: {}\n\n\n\n"+'-'*100).format(MAP,prec_curv[:5]))
             #---------------------------------------------------------------------------------
             # Visualize
-            
+
+        break
+
+    import pickle
+    with open('results.pickle', 'wb') as f:
+        pickle.dump(results, f)
