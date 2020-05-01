@@ -25,7 +25,7 @@ INSTALL_REQUIRES = (
     'matplotlib>=2.0.0',
     'scikit-learn>=0.21.2',
     'theano>=0.9.0',
-    'keras==2.0.2'
+    'keras>=2.3.1'
 )
 
 
